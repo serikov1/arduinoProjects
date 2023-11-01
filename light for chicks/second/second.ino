@@ -12,7 +12,7 @@
 // const char* ssid = "RT-WiFi-2616";
 // const char* password = "9h3HK6aS";
 
-const char* ssid = "TP-Link_Saray";
+const char* ssid = "TP_Link_Saray";
 const char* password = "Tx672Ey9iu"; 
 
 // const char* ssid = "realme GT 5G";
@@ -571,6 +571,7 @@ void lampPWMcontrol(uint32_t currHour, uint32_t currMin)
   if(currHour == DAY_HOUR_ON_LIGHT && currMin == DAY_MIN_ON_LIGHT)
   {
     analogWrite(LAMP_PWM_PIN, 256);
+    lampTimeCounter = 256;
   }
 
   if((currHour == data.lampOffHour && currMin >= data.lampOffMin && currMin < data.lampOffMin + LAMP_PWM_TIME) || (currHour - data.lampOffHour == 1 && currMin <= data.lampOffMin + LAMP_PWM_TIME - 60))
