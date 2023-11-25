@@ -36,16 +36,17 @@ String header;
 
 const uint16_t LAMP_PWM_TIME = 60; // in minutes
 const uint16_t LAMP_PWM_PARTICLE = 14000; // step of counter in mls
-uint16_t lampTimeCounter = 0;
+uint16_t lampTimeCounter = 256;
 uint32_t tmrLampPWM = 0;
 
 bool doorClosed = false;
+bool dayLight = true;
 // const uint16_t DOOR_MOVE_TIME = 5000; // in mls
 
 uint8_t currHour = 0;
 uint8_t currMin = 0;
 
-#define INIT_ADDR 50
+#define INIT_ADDR 51
 #define INIT_KEY 9
 
 // termistor on А0
@@ -179,6 +180,9 @@ void loop() {
     sixtyTimer = millis();
     Serial.println(timeClient.getHours());
   }
+
+  if(currHour > data.lampOnHour && currHour < data.lampOffHour) lampTimeCounter = 256;
+  if(currHour <= data.lampOnHour || currHour >= data.lampOffHour && currMin > data.lampOffHour) lampTimeCounter = 0;
 
   lampPWMcontrol(currHour, currMin);
   doorControl(currHour, currMin, doorClosed);
@@ -563,15 +567,20 @@ void lampPWMcontrol(uint32_t currHour, uint32_t currMin)
     }
   }
 
-  if(currHour == DAY_HOUR_OFF_LIGHT && currMin == DAY_MIN_OFF_LIGHT)
-  {
-    analogWrite(LAMP_PWM_PIN, 0);
-  }
+  // if(currHour == DAY_HOUR_OFF_LIGHT && currMin == DAY_MIN_OFF_LIGHT)
+  // {
+  //   analogWrite(LAMP_PWM_PIN, 0);
+  // }
 
-  if(currHour == DAY_HOUR_ON_LIGHT && currMin == DAY_MIN_ON_LIGHT)
-  {
-    analogWrite(LAMP_PWM_PIN, 256);
-    lampTimeCounter = 256;
+  // if(currHour == DAY_HOUR_ON_LIGHT && currMin == DAY_MIN_ON_LIGHT)
+  // {
+  //   analogWrite(LAMP_PWM_PIN, 256);
+  //   lampTimeCounter = 256;
+  // }
+
+  if(dayLight && currHour >= data.lampOnHour && currMin >= data.lampOnMin + LAMP_PWM_TIME && currHour <= data.lampOffHour && currMin < data.lampOffMin) {
+    if(lampTimeCounter != 256) lampTimeCounter = 256;
+    analogWrite(LAMP_PWM_PIN, lampTimeCounter);
   }
 
   if((currHour == data.lampOffHour && currMin >= data.lampOffMin && currMin < data.lampOffMin + LAMP_PWM_TIME) || (currHour - data.lampOffHour == 1 && currMin <= data.lampOffMin + LAMP_PWM_TIME - 60))
