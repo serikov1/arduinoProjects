@@ -12,11 +12,11 @@
 // const char* ssid = "RT-WiFi-2616";
 // const char* password = "9h3HK6aS";
 
-const char* ssid = "TP_Link_Saray";
-const char* password = "Tx672Ey9iu"; 
+// const char* ssid = "TP_Link_Saray";
+// const char* password = "Tx672Ey9iu"; 
 
-// const char* ssid = "realme GT 5G";
-// const char* password = "p3sbs4k3";
+const char* ssid = "realme GT 5G";
+const char* password = "p3sbs4k3";
 
 // Web Server on port 8888
 WiFiServer server(8888);
@@ -46,7 +46,7 @@ bool dayLight = true;
 uint8_t currHour = 0;
 uint8_t currMin = 0;
 
-#define INIT_ADDR 51
+#define INIT_ADDR 53
 #define INIT_KEY 9
 
 // termistor on А0
@@ -160,12 +160,26 @@ void setup() {
   if(EEPROM.read(INIT_ADDR) != INIT_KEY){
     EEPROM.put(INIT_ADDR, INIT_KEY);
     EEPROM.commit();
-    // EEPROM.put(0, data);
-    // EEPROM.commit();
+    EEPROM.put(0, data);
+    EEPROM.commit();
     Serial.println(EEPROM.read(INIT_ADDR));
   }
   EEPROM.get(0, data);
-  Serial.println(data.doorOffMin);
+
+  timeClient.update();
+  currHour = timeClient.getHours();
+  currMin = timeClient.getMinutes();
+
+  if(currHour > data.lampOnHour && currHour < data.lampOffHour)
+  {
+    lampTimeCounter = 256;
+    //  Serial.println(lampTimeCounter);
+  }
+  if(currHour < data.lampOnHour || currHour > data.lampOffHour) 
+  {
+    lampTimeCounter = 0;
+    // Serial.println(lampTimeCounter);
+  }
 
 
 }
@@ -174,15 +188,22 @@ void loop() {
 
   if(millis() - sixtyTimer >= 60000) 
   {
-    timeClient.update();
-    currHour = timeClient.getHours();
-    currMin = timeClient.getMinutes();
-    sixtyTimer = millis();
-    Serial.println(timeClient.getHours());
+    if( WiFi.status() == WL_CONNECTED) {
+      timeClient.update();
+      currHour = timeClient.getHours();
+      currMin = timeClient.getMinutes();
+      sixtyTimer = millis();
+    }
+    else {
+      WiFi.begin(ssid, password);
+      delay(5000);
+    }
+    // Serial.println(timeClient.getHours());
+    // Serial.println(lampTimeCounter);
+    // Serial.println(data.lampOnHour);
+    // Serial.println(data.lampOffHour);
   }
 
-  if(currHour > data.lampOnHour && currHour < data.lampOffHour) lampTimeCounter = 256;
-  if(currHour <= data.lampOnHour || currHour >= data.lampOffHour && currMin > data.lampOffHour) lampTimeCounter = 0;
 
   lampPWMcontrol(currHour, currMin);
   doorControl(currHour, currMin, doorClosed);
@@ -578,9 +599,11 @@ void lampPWMcontrol(uint32_t currHour, uint32_t currMin)
   //   lampTimeCounter = 256;
   // }
 
-  if(dayLight && currHour >= data.lampOnHour && currMin >= data.lampOnMin + LAMP_PWM_TIME && currHour <= data.lampOffHour && currMin < data.lampOffMin) {
+  if(dayLight && (currHour > data.lampOnHour || (currHour = data.lampOnHour && currMin >= data.lampOnMin + LAMP_PWM_TIME)) && ( currHour < data.lampOffHour || (currHour =  data.lampOffHour && currMin < data.lampOffMin) )) {
     if(lampTimeCounter != 256) lampTimeCounter = 256;
+    // Serial.println("in time");
     analogWrite(LAMP_PWM_PIN, lampTimeCounter);
+    dayLight = false;
   }
 
   if((currHour == data.lampOffHour && currMin >= data.lampOffMin && currMin < data.lampOffMin + LAMP_PWM_TIME) || (currHour - data.lampOffHour == 1 && currMin <= data.lampOffMin + LAMP_PWM_TIME - 60))
