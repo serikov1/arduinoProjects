@@ -12,11 +12,11 @@
 // const char* ssid = "RT-WiFi-2616";
 // const char* password = "9h3HK6aS";
 
-// const char* ssid = "TP_Link_Saray";
-// const char* password = "Tx672Ey9iu"; 
+const char* ssid = "TP_Link_Saray";
+const char* password = "Tx672Ey9iu"; 
 
-const char* ssid = "realme GT 5G";
-const char* password = "p3sbs4k3";
+// const char* ssid = "realme GT 5G";
+// const char* password = "p3sbs4k3";
 
 // Web Server on port 8888
 WiFiServer server(8888);
@@ -125,7 +125,7 @@ void setup() {
   timeClient.begin();
   EEPROM.begin(100);
 
-  Serial.begin(115200);
+  Serial.begin(9600);
   delay(10);
   
   // Connecting to WiFi network
@@ -167,18 +167,19 @@ void setup() {
   EEPROM.get(0, data);
 
   timeClient.update();
+  
   currHour = timeClient.getHours();
   currMin = timeClient.getMinutes();
-
+  delay(1000);
   if(currHour > data.lampOnHour && currHour < data.lampOffHour)
   {
     lampTimeCounter = 256;
-    //  Serial.println(lampTimeCounter);
+     Serial.println(lampTimeCounter);
   }
   if(currHour < data.lampOnHour || currHour > data.lampOffHour) 
   {
     lampTimeCounter = 0;
-    // Serial.println(lampTimeCounter);
+    Serial.println(lampTimeCounter);
   }
 
 
@@ -193,6 +194,7 @@ void loop() {
       currHour = timeClient.getHours();
       currMin = timeClient.getMinutes();
       sixtyTimer = millis();
+      Serial.println("in loop");
     }
     else {
       WiFi.begin(ssid, password);
